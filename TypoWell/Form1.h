@@ -918,65 +918,51 @@ private: array<String^>^ Word; // テキストファイルの内容を保存する
 				 // Wordの中からランダムで行を選び、400文字になるまで足していく
 				 int len = Word->Length;
 				 Random^ rand = gcnew Random();
-				 static int furiwake;
-				 furiwake = 0;
+				 static bool furiwake;
+				 furiwake = false;
 
-				 while (textRomaji->Text->Length < wordlen)
-				 {
-					 for each (String^ s in Word[rand->Next(len)]->Split(','))
-					 // Wordの要素数を超えない範囲でランダムに取り出す
-					 {
-						 if (furiwake%2 == 0)
-						 {
+				 while (textRomaji->Text->Length < wordlen) {
+					 // Wordの要素数を超えない範囲でランダムに取り出す 
+					 for each (String^ s in Word[rand->Next(len)]->Split(',')) {
+						 if (furiwake == false) {
 							 textNihongo->Text += s;
 							 textNihongo->Text += "　";
-						 }
-						 else
-						 {
+							 furiwake = true;
+						 } else {
 							 textRomaji->Text += s;
 							 textRomaji->Text += " ";
+							 furiwake = false;
 						 }
-						 furiwake++;
 					 }
 				 }
 
 				 // textRomajiの長さがwordlenを超えているなら、ここで超えた分を削り落とす
 				 int len2 = textRomaji->Text->Length;
-				 if (len2 > wordlen)
-				 {
+				 if (len2 > wordlen) {
 					 textRomaji->Text = textRomaji->Text->Remove(wordlen, len2 - wordlen);
 				 }
 
-				 for (int i=0; i<wordlen; i++)
-				 {
-					 if (i==50 || i==102 || i==154 || i==206 || i==258 || i==310 || i==362 || i==414)
-					 // 改行を付加することで文字列の長さが1増えてしまうためこのように書く
-					 {
+				 for (int i=0; i<wordlen; ++i) {
+					 // 改行を付加することで文字列の長さが2増えてしまうためこのように書く
+					 if (i==50 || i==102 || i==154 || i==206 || i==258 || i==310 || i==362 || i==414) {
 						 textRomaji->Text = textRomaji->Text->Insert(i, "\r\n");
 					 }
-					 // i<wordlenだと、文字列の長さが増える関係で最後の行には改行は付加されないが、別にそれで問題ない
 				 }
 
 				 // カウントダウン処理
 				 CountDown->ForeColor = Color::Black;
 				 // 最初のカウントはすぐに表示
-				 if (Menu3Seconds->Checked == true)
-				 {
+				 if (Menu3Seconds->Checked == true) {
 					 CountDown->Text = "3";
-				 }
-				 else if (Menu2Seconds->Checked == true)
-				 {
+				 } else if (Menu2Seconds->Checked == true) {
 					 CountDown->Text = "   2";
-				 }
-				 else
-				 {
+				 } else {
 					 CountDown->Text = "      1";
 				 }
 
 				 // 2番目以降のカウントはtimer2を利用して1秒ごとに進行
 				 timer2->Enabled = true;
-				 while (timer2->Enabled == true)
-				 {
+				 while (timer2->Enabled == true) {
 					 Application::DoEvents();
 				 }
 
@@ -999,55 +985,45 @@ private: array<String^>^ Word; // テキストファイルの内容を保存する
 // 打鍵処理＆打ち切り処理
 private: System::Void textRomaji_KeyDown(System::Object^  sender, System::Windows::Forms::KeyEventArgs^  e) {
 			 // GO!と表示されていないときは、キーを入力しても何もせずreturn
-			 if (CountDown->Text != " GO!")
-			 {
+			 if (CountDown->Text != " GO!") {
 				 return;
 			 }
 
-			 // 打たれた文字が正しければwb++、間違っていればmiss++
-			 if (e->KeyValue == textRomaji->Text[wb].ToUpper(textRomaji->Text[wb]))
-			 {
-				 wb++;
-			 }
-			 else if (textRomaji->Text[wb] == '-' && e->KeyValue == 189)
-			 // e->KeyValue == '-'ではダメで、デバッグすると文字コードが189になっているためこのように書いている
-			 {
-				 wb++;
-			 }
-			 else if (e->KeyValue == 27) // = Esc
-			 {
+			 // 打たれた文字が正しければ++wb、間違っていれば++miss
+			 if (e->KeyValue == textRomaji->Text[wb].ToUpper(textRomaji->Text[wb])) {
+				 ++wb;
+			 } else if (textRomaji->Text[wb] == '-' && e->KeyValue == 189) {
+				 // ハイフン用、e->KeyValue == '-'ではダメで、デバッグすると文字コードが189になっているためこのように書いている
+				 ++wb;
+			 } else if (e->KeyValue == 27) {
+				 // Esc
 				 Shokika();
 				 ProcessTabKey(true);
 				 return;
-			 }
-			 else
-			 {
-				 if (MenuMissON->Checked == true)
-				 {
+			 } else {
+				 // ミス
+				 if (MenuMissON->Checked == true) {
 					 System::Media::SystemSounds::Beep->Play();
 				 }
-				 miss++;
-				 if (miss <= 999)
-				 {
+				 ++miss;
+				 if (miss <= 999) {
 					 MissLabel2->Text = miss.ToString();
 				 }
 			 }
 
 			 // 改行が来たらwbを+2することで飛ばす
-			 if (wb != textRomaji->Text->Length && textRomaji->Text[wb] == '\r')
+			 if (wb != textRomaji->Text->Length && textRomaji->Text[wb] == '\r') {
 				 // 一つ目の条件を書かないと、最後の文字を打ったときに
 				 // インデックスの外を参照するエラーが発生する
-			 {
 				 wb += 2;
 			 }
-			 if (wb == textRomaji->Text->Length)
-			 {
+			 // 最後の文字まで打ったときもwbを+2（ラップタイム・ラップスピードを表示させるため）
+			 if (wb == textRomaji->Text->Length) {
 				 wb += 2;
 			 }
 
 			 // 50文字ごとにラップタイム・ラップスピードを表示する
-			 switch (wb)
-			 {
+			 switch (wb) {
 				 case 52:
 					 Lap1->Text = TimeLabel2->Text;
 					 KPM1->Text = Convert::ToInt32(3000 / Convert::ToDouble(Lap1->Text)).ToString();
@@ -1103,8 +1079,7 @@ private: System::Void textRomaji_KeyDown(System::Object^  sender, System::Window
 			 }
 
 			 // 打ち切り後の処理
-			 if (wb == textRomaji->Text->Length + 2)
-			 {
+			 if (wb == textRomaji->Text->Length + 2) {
 				 // wbの値を改行の数だけ差し引く
 				 wb -= wb/50 * 2;
 
@@ -1118,11 +1093,9 @@ private: System::Void textRomaji_KeyDown(System::Object^  sender, System::Window
 
 				 // 2.kiroku.csvに書き込み
 				 RETRY:
-				 try
-				 {
+				 try {
 					 if (System::IO::File::Exists("kiroku.csv") == false ||
-						 System::IO::File::ReadAllText("kiroku.csv", ENCODE) == "")
-					 {
+						 System::IO::File::ReadAllText("kiroku.csv", ENCODE) == "") {
 						System::IO::File::WriteAllText("kiroku.csv",
 							"打鍵速度,ミス,タイム,文字数,使用ワード,日付,時刻,ラップ1,ラップ2,ラップ3,ラップ4,ラップ5,ラップ6,ラップ7,ラップ8\r\n", ENCODE);
 					 }
@@ -1138,14 +1111,11 @@ private: System::Void textRomaji_KeyDown(System::Object^  sender, System::Window
 							","+Lap5->Text+","+Lap6->Text+","+Lap7->Text+","+Lap8->Text+"\r\n";
 
 					 System::IO::File::WriteAllText("kiroku.csv", str, ENCODE);
-				 }
-				 catch (Exception^ ex)
-				 {
+				 } catch (Exception^ ex) {
 					 ex;
 					 if (MessageBox::Show("記録の書き込み中にエラーが発生しました。\r\ncsvファイルを開いている場合は閉じてから再試行してください。", "エラー",
 						 MessageBoxButtons::RetryCancel, MessageBoxIcon::Exclamation)
-						 == System::Windows::Forms::DialogResult::Retry)
-					 {
+						 == System::Windows::Forms::DialogResult::Retry) {
 						 goto RETRY;
 					 }
 				 }
@@ -1173,39 +1143,26 @@ private: System::Void timer2_Tick(System::Object^  sender, System::EventArgs^  e
 			 // カウントダウン
 			 static int cntflg = 0;
 
-			 if (Menu3Seconds->Checked == true)
-			 {
-				 if (cntflg == 0)
-				 {
+			 if (Menu3Seconds->Checked == true) {
+				 if (cntflg == 0) {
 					 CountDown->Text = "   2";
-					 cntflg++;
-				 }
-				 else if (cntflg == 1)
-				 {
+					 ++cntflg;
+				 } else if (cntflg == 1) {
 					 CountDown->Text = "      1";
-					 cntflg++;
-				 }
-				 else
-				 {
+					 ++cntflg;
+				 } else {
 					 cntflg = 0;
 					 timer2->Enabled = false;
 				 }
-			 }
-			 else if (Menu2Seconds->Checked == true)
-			 {
-				 if (cntflg == 0)
-				 {
+			 } else if (Menu2Seconds->Checked == true) {
+				 if (cntflg == 0) {
 					 CountDown->Text = "      1";
-					 cntflg++;
-				 }
-				 else if (cntflg == 1)
-				 {
+					 ++cntflg;
+				 } else if (cntflg == 1) {
 					 cntflg = 0;
 					 timer2->Enabled = false;
 				 }
-			 }
-			 else
-			 {
+			 } else {
 				 cntflg = 0;
 				 timer2->Enabled = false;
 			 }
@@ -1217,8 +1174,7 @@ private: System::Void timer2_Tick(System::Object^  sender, System::EventArgs^  e
 // その他の主要処理
 private: System::Void Form1_Load(System::Object^  sender, System::EventArgs^  e) {
 			 // kihon.txtを読み込んでWordに代入
-			 if (System::IO::File::Exists("kihon.txt") == false)
-			 {
+			 if (System::IO::File::Exists("kihon.txt") == false) {
 				 MessageBox::Show("kihon.txtが存在しません。", "エラー", OKExc);
 				 READY->Enabled = false;
 				 UsingTextFile->Text = "未選択";
@@ -1226,19 +1182,16 @@ private: System::Void Form1_Load(System::Object^  sender, System::EventArgs^  e)
 			 }
 
 			 array<String^>^ buf = System::IO::File::ReadAllLines("kihon.txt", ENCODE);
-			 // 中身が空ならアウト
-			 if (buf->Length == 0)
-			 {
+			 // 中身が空なら弾く
+			 if (buf->Length == 0) {
 				 MessageBox::Show("kihon.txtの内容が正しくありません。", "エラー", OKExc);
 				 READY->Enabled = false;
 				 UsingTextFile->Text = "未選択";
 				 return;
 			 }
-			 for (int i=0; i<buf->Length; i++)
-			 {
-				 // bufの中に , が無い行が一つでもあればアウト
-				 if (buf[i]->IndexOf(',') == -1)
-				 {
+			 for (int i=0; i<buf->Length; ++i) {
+				 // bufの中に , が無い行が一つでもあれば弾く
+				 if (buf[i]->IndexOf(',') == -1) {
 					 MessageBox::Show("kihon.txtの内容が正しくありません。", "エラー", OKExc);
 					 READY->Enabled = false;
 					 UsingTextFile->Text = "未選択";
@@ -1255,8 +1208,7 @@ private: System::Void Form1_Load(System::Object^  sender, System::EventArgs^  e)
 
 			 // settings.txtが存在する場合は、その内容を読み込んで前回終了時の
 			 // 「文字数設定」「カウントダウン」「ミス音」の設定を復活させる
-			 if (System::IO::File::Exists("settings.txt") == false)
-			 {
+			 if (System::IO::File::Exists("settings.txt") == false) {
 				 // 存在しない場合はデフォルト値として「400, 3秒後, 鳴らす」を設定
 				 Menu400->Checked = true;
 				 wordlen = 400;
@@ -1266,34 +1218,24 @@ private: System::Void Form1_Load(System::Object^  sender, System::EventArgs^  e)
 			 }
 
 			 StreamReader^ r = gcnew StreamReader("settings.txt", ENCODE);
-			 try
-			 {
+			 try {
 				 String^ buf1 = r->ReadLine();
 				 String^ buf2 = r->ReadLine();
 				 String^ buf3 = r->ReadLine();
 
-				 if (buf1 == "1")
-				 {
+				 if (buf1 == "1") {
 					 Menu50->Checked = true;
 					 wordlen = 50;
-				 }
-				 else if (buf1 == "2")
-				 {
+				 } else if (buf1 == "2") {
 					 Menu100->Checked = true;
 					 wordlen = 100;
-				 }
-				 else if (buf1 == "3")
-				 {
+				 } else if (buf1 == "3") {
 					 Menu200->Checked = true;
 					 wordlen = 200;
-				 }
-				 else if (buf1 == "4")
-				 {
+				 } else if (buf1 == "4") {
 					 Menu300->Checked = true;
 					 wordlen = 300;
-				 }
-				 else
-				 {
+				 } else {
 					 Menu400->Checked = true;
 					 wordlen = 400;
 				 }
@@ -1309,9 +1251,7 @@ private: System::Void Form1_Load(System::Object^  sender, System::EventArgs^  e)
 					 MenuMissOFF->Checked = true;
 				 else
 					 MenuMissON->Checked = true;
-			 }
-			 catch (Exception^ ex)
-			 {
+			 } catch (Exception^ ex) {
 				 ex;
 				 Menu400->Checked = true;
 				 wordlen = 400;
@@ -1325,31 +1265,26 @@ private: System::Void MenuHiraku_Click(System::Object^  sender, System::EventArg
 			 // .txtを選ぶためのダイアログを表示
 			 openFileDialog1->Filter = "txt形式(*.txt)|*.txt|すべてのファイル(*.*)|*.*";
 			 if (openFileDialog1->ShowDialog() !=
-				 System::Windows::Forms::DialogResult::OK)
-			 {
+				 System::Windows::Forms::DialogResult::OK) {
 				 return;
 			 }
 			 
 			 // .txt以外が選ばれたらメッセージボックスを表示してreturn
-			 if (System::IO::Path::GetExtension(openFileDialog1->FileName) != ".txt")
-			 {
+			 if (System::IO::Path::GetExtension(openFileDialog1->FileName) != ".txt") {
 				 MessageBox::Show("選択されたファイルはテキストファイルではありません。", "エラー", OKExc);
 				 return;
 			 }
 
 			 // .txtの形式が正しいか確認
 			 array<String^>^ buf = System::IO::File::ReadAllLines(openFileDialog1->FileName, ENCODE);
-			 // 中身が空ならアウト
-			 if (buf->Length == 0)
-			 {
+			 // 中身が空なら弾く
+			 if (buf->Length == 0) {
 				 MessageBox::Show("テキストファイルの内容が正しくありません。", "エラー", OKExc);
 				 return;
 			 }
-			 for (int i=0; i<buf->Length; i++)
-			 {
-				 // bufの中に , が無い行が一つでもあればアウト
-				 if (buf[i]->IndexOf(',') == -1)
-				 {
+			 for (int i=0; i<buf->Length; ++i) {
+				 // bufの中に , が無い行が一つでもあれば弾く
+				 if (buf[i]->IndexOf(',') == -1) {
 					 MessageBox::Show("テキストファイルの内容が正しくありません。", "エラー", OKExc);
 					 return;
 				 }
@@ -1358,23 +1293,20 @@ private: System::Void MenuHiraku_Click(System::Object^  sender, System::EventArg
 			 // 正しければWordの内容を更新
 			 Word = buf;
 			 UsingTextFile->Text = System::IO::Path::GetFileName(openFileDialog1->FileName);
-			 if (READY->Enabled == false)
-			 {
+			 if (READY->Enabled == false) {
 				 READY->Enabled = true;
 			 }
 		 }
 private: System::Void MenuKirokuOpen_Click(System::Object^  sender, System::EventArgs^  e) {
-			 // kiroku.csvを紐付いたソフトで開く
-			 if (System::IO::File::Exists("kiroku.csv") == false)
-			 {
+			 // kiroku.csvを紐付くソフトで開く
+			 if (System::IO::File::Exists("kiroku.csv") == false) {
 				 MessageBox::Show("kiroku.csvが存在しません。", "エラー", OKExc);
 				 return;
 			 }
 
 			 System::Diagnostics::Process::Start("kiroku.csv");
 		 }
-private: void Shokika(void)
-		 {
+private: void Shokika(void) {
 			 CountDown->Text = "";
 			 textNihongo->Text = "";
 			 textRomaji->Text = "";
@@ -1416,8 +1348,7 @@ private: System::Void MenuSyuuryou_Click(System::Object^  sender, System::EventA
 		 }
 private: System::Void Form1_FormClosing(System::Object^  sender, System::Windows::Forms::FormClosingEventArgs^  e) {
 			 // 文字数・カウントダウン・ミス音の設定をsettings.txtに保存
-			 if (System::IO::File::Exists("settings.txt") == false)
-			 {
+			 if (System::IO::File::Exists("settings.txt") == false) {
 				 // settings.txtが存在しない場合はここで作成しておく
 				 System::IO::File::WriteAllText("settings.txt", "", ENCODE);
 			 }
@@ -1513,17 +1444,17 @@ private: System::Void MenuMissOFF_Click(System::Object^  sender, System::EventAr
 			 MenuMissOFF->Checked = true;
 		 }
 private: System::Void textNihongo_KeyDown(System::Object^  sender, System::Windows::Forms::KeyEventArgs^  e) {
-			 if (e->KeyValue == 27) // = Esc
-			 {
+			 // 日本語部分にフォーカスが合っている場合はEscキーのみ受け付ける
+			 if (e->KeyValue == 27) {
+				 // Esc
 				 Shokika();
 				 ProcessTabKey(true);
 				 return;
 			 }
 		 }
 private: System::Void readMeRToolStripMenuItem_Click(System::Object^  sender, System::EventArgs^  e) {
-			 // ReadMe.txtを紐付いたソフトで開く
-			 if (System::IO::File::Exists("ReadMe.txt") == false)
-			 {
+			 // ReadMe.txtを紐付くソフトで開く
+			 if (System::IO::File::Exists("ReadMe.txt") == false) {
 				 MessageBox::Show("ReadMe.txtが存在しません。", "エラー", OKExc);
 				 return;
 			 }
@@ -1535,8 +1466,7 @@ private: System::Void readMeRToolStripMenuItem_Click(System::Object^  sender, Sy
 
 #pragma region タイプウェル
 // タイプウェルと同様のレベル表記を返す関数
-private: String^ TWLevel(int n)
-		 {
+private: String^ TWLevel(int n) {
 			 if (n < 116)
 				 return "-";
 			 if (n >= 800 && n < 857)
